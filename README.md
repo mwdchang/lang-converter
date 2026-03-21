@@ -22,7 +22,8 @@ Phase 1 consist of setting up the views and plumbing to building APKs. Asked Gem
 Andriod Studio was a manual process, a few hiccups but mostly due to not knowing where things are located in the IDE and PATH settings. Build took a bit of time (initial package downloads) but mostly smooth, app opens and works with placeholder views.
 
 
-### Step 2: Basic
+### Step 2: Translation model
+TensorflowJS integration was a bit weird, prompted the Gemini-CLI to research transformerJS instead, then had to further prompt Gemini-CLI to not use an outdated version of transformerJS. Gemini could not download the model file so they had to be pulled down manually from hugginface (https://huggingface.co/Xenova/nllb-200-distilled-600M). The model has a lot more supported languages than I asked for, so the files are pretty hefty with encoder/decoder at 450mb each respectively. Gemini misconfigured offline mode for transformerJS several times, but all things considered had the page working after 5 minutes. Unsurprisingly running a big model on a webpage is a tad slow, but the plumbing works and maybe can search for a smaller model later.
 
 
 
