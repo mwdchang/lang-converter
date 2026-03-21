@@ -16,13 +16,29 @@ export function useTranslation() {
   const translationError = ref<string | null>(null); // Stores any errors during model loading or translation
 
   onMounted(async () => {
+    // --- DEBUGGING: Test if we can fetch a file from the public directory ---
+    try {
+      const testUrl = '/models/Xenova/nllb-200-distilled-600M/generation_config.json';
+      console.log(`[DEBUG] Fetching: ${testUrl}`);
+      const response = await fetch(testUrl);
+      console.log('[DEBUG] Fetch response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`[DEBUG] Failed to fetch test file. Status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('[DEBUG] Fetched data successfully:', data);
+    } catch (e) {
+      console.error('[DEBUG] Fetch test failed:', e);
+    }
+    // --- END DEBUGGING ---
+
     try {
       console.log('Loading translation model...');
       // Initialize the translation pipeline
-      // This will automatically look for the model files in env.localModelPath
       translator.value = await pipeline(
         'translation',
-        'Xenova/nllb-200-distilled-600M' // Specify the model ID
+        'Xenova/nllb-200-distilled-600M',
+        { local_files_only: true }
       );
       console.log('Translation model loaded successfully.');
     } catch (error: any) {
