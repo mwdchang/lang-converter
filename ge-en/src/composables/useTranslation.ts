@@ -16,28 +16,12 @@ export function useTranslation() {
   const translationError = ref<string | null>(null); // Stores any errors during model loading or translation
 
   onMounted(async () => {
-    // --- DEBUGGING: Test if we can fetch a file from the public directory ---
     try {
-      const testUrl = '/models/Xenova/nllb-200-distilled-600M/generation_config.json';
-      console.log(`[DEBUG] Fetching: ${testUrl}`);
-      const response = await fetch(testUrl);
-      console.log('[DEBUG] Fetch response status:', response.status);
-      if (!response.ok) {
-        throw new Error(`[DEBUG] Failed to fetch test file. Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('[DEBUG] Fetched data successfully:', data);
-    } catch (e) {
-      console.error('[DEBUG] Fetch test failed:', e);
-    }
-    // --- END DEBUGGING ---
-
-    try {
-      console.log('Loading translation model...');
+      console.log('Loading translation model (Xenova/opus-mt-de-en)...');
       // Initialize the translation pipeline
       translator.value = await pipeline(
-        'translation',
-        'Xenova/nllb-200-distilled-600M',
+        'translation', // Task is 'translation'
+        'Xenova/opus-mt-de-en', // Specify the model ID
         { local_files_only: true }
       );
       console.log('Translation model loaded successfully.');
@@ -49,7 +33,7 @@ export function useTranslation() {
     }
   });
 
-  const translate = async (text: string, src_lang: string = 'deu_Latn', tgt_lang: string = 'eng_Latn') => {
+  const translate = async (text: string, src_lang: string = 'de', tgt_lang: string = 'en') => { // Simple lang codes
     if (!translator.value) {
       console.warn('Translator not loaded yet.');
       return '';
@@ -63,13 +47,12 @@ export function useTranslation() {
     }
 
     try {
-      // The `pipeline` function returns an array of results,
-      // where each item has a `translation_text` property.
+      // OPUS-MT models do not require a prefix for the task
       const result = await translator.value(text, {
         src_lang: src_lang,
         tgt_lang: tgt_lang,
       });
-      return result[0].translation_text;
+      return result[0].translation_text; // Result is under translation_text
     } catch (error: any) {
       console.error('Translation failed:', error);
       translationError.value = error.message;
