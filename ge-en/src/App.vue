@@ -8,29 +8,31 @@ import { RouterLink, RouterView } from 'vue-router';
     <RouterLink to="/text">Text</RouterLink>
     <RouterLink to="/history">History</RouterLink>
   </nav>
-
   <RouterView />
 </template>
 
 <style scoped>
+body {
+}
+
 nav {
   width: 100%;
-  font-size: 12px;
+  font-size: 1.0rem;
   text-align: center;
   margin-top: 1rem;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
 nav a {
   display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+  background: #dddddd;
+  padding: 0.25rem 1.25rem;
+  text-decoration: none;
+  border-radius: 0.25rem;
+  margin: 0 0.25rem;
 }
 
 nav a:first-of-type {
   border: 0;
 }
+
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="text-translation-container">
-    <h1>Text-to-Text Translation</h1>
+    <h2>Text Translation</h2>
     <div class="input-section">
       <textarea
         v-model="inputText"
@@ -26,11 +26,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useTranslation } from '@/composables/useTranslation';
+import { useHistory } from '@/composables/useHistory'; // Import useHistory
 
 const inputText = ref('');
 const translatedText = ref('');
 
 const { translate, isModelLoading, translationError } = useTranslation();
+const { addEntry } = useHistory(); // Get addEntry from useHistory
 const isTranslating = ref(false); // Local state for UI while translation is in progress
 
 const performTranslation = async () => {
@@ -42,8 +44,13 @@ const performTranslation = async () => {
   translatedText.value = ''; // Clear previous translation
 
   try {
-    const result = await translate(inputText.value, 'deu_Latn', 'eng_Latn');
+    const result = await translate(inputText.value, 'de', 'en'); // Use simple lang codes
     translatedText.value = result;
+
+    // Save to history only if translation was successful and not empty
+    if (result && result.trim()) {
+      addEntry(inputText.value, result);
+    }
   } catch (error) {
     console.error('Failed to perform translation:', error);
     // translationError is already set by the composable,
