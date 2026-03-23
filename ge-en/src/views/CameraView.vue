@@ -92,7 +92,6 @@ const checkAndRequestCameraPermission = async () => {
   } else {
     // Web platform
     // Attempt to start camera directly, getUserMedia will prompt for permission
-    console.log('starting web........');
     startCamera();
   }
 };

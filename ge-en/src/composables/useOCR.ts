@@ -21,6 +21,8 @@ export function useOCR() {
         corePath: '/tesseract-static/',                     // Path to the directory containing WASM files
         // corePath: '/tesseract-static/tesseract-core.wasm.js',
         // Path to local language data
+        gzip: false,
+        cacheMethod: 'none',
         langPath: '/models/tessdata/',
         logger: m => console.log(m), // Log Tesseract.js progress
       });
