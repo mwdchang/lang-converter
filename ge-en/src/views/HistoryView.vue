@@ -1,6 +1,6 @@
 <template>
   <div class="history-container">
-    <h1>Translation History</h1>
+    <h2>Translation History</h2>
     <button @click="clearAllHistory" class="clear-all-button">Clear All History</button>
 
     <div v-if="history.length === 0" class="empty-history">

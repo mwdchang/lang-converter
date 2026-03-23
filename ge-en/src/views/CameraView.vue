@@ -1,6 +1,6 @@
 <template>
   <div class="camera-container">
-    <h1>Camera Translation</h1>
+    <h2>Camera Translation</h2>
     <div v-if="!hasCameraPermission" class="permission-message">
       <p>Please grant camera permission to use this feature.</p>
       <button @click="checkAndRequestCameraPermission">Grant Permission</button>

@@ -10,12 +10,18 @@ env.allowLocalModels = true;
 //    This path is relative to the `public` folder.
 env.localModelPath = '/models/';
 
+const translator = ref<any>(null); // Stores the initialized pipeline
+const isModelLoading = ref(true); // Tracks if the model is still loading
+
+
 export function useTranslation() {
-  const translator = ref<any>(null); // Stores the initialized pipeline
-  const isModelLoading = ref(true); // Tracks if the model is still loading
   const translationError = ref<string | null>(null); // Stores any errors during model loading or translation
 
   onMounted(async () => {
+    if (translator.value) {
+      console.log('Translator already initialized');
+      return;
+    }
     try {
       console.log('Loading translation model (Xenova/opus-mt-de-en)...');
       // Initialize the translation pipeline

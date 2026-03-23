@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router';
+import { onMounted } from 'vue';
+import { RouterLink, RouterView, useRouter } from 'vue-router';
+
+const router = useRouter();
+
+onMounted(() => {
+  router.push({ name: 'text' });
+});
 </script>
 
 <template>
   <nav>
-    <RouterLink to="/">Camera</RouterLink>
+    <RouterLink to="/camera">Camera</RouterLink>
     <RouterLink to="/text">Text</RouterLink>
     <RouterLink to="/history">History</RouterLink>
   </nav>
@@ -12,9 +19,6 @@ import { RouterLink, RouterView } from 'vue-router';
 </template>
 
 <style scoped>
-body {
-}
-
 nav {
   width: 100%;
   font-size: 1.0rem;

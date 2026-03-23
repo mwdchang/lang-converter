@@ -1,12 +1,14 @@
 ## Lang-Converter
-An Android app from doing offline language translations.
+An Android app for doing offline language translations.
 
-An inquiry into (mostly) vibe-coding of an offline language translation application. 
-Why you ask? Because I don't want to bankrupt myself paying accidental roaming charges out of the country, and existing services claiming to have offline modes either have quirks(*cough* googlemaps *cough*) or do not work exactly the way I want them to work.
+A weekend (plus an additional couple of days) inquiry into (mostly) vibe-coding of an offline language translation application. Why you ask? 
+- Avoid accidental roaming charges while out of the country, or in remote areas with no coverage.
+- Existing services with offline modes either have quirks (*cough* googlemaps *cough*) or do not work the way I wanted.
+- Just curious how far vibe-coding will go with something a bit more esoteric
 
 
 ### Ab-Initio
-Initial research and prodding manually: just to see what combinations of options are available as I last touched Android development years ago and a lot of things had changed. After a bit of poking around my basic requirements:
+Initial manual research and prodding manually: just to see what combinations of options are available as I last touched Android development years ago and a lot of things had changed. After a bit of poking around my basic requirements:
 - Minimal Java if possible
 - The models for OCR and translation should be offline
 
@@ -15,39 +17,56 @@ Internet and ChatGPT seem to think this is possible. TesseractJS which I had use
 Alternatively, running something like a quantized LLM as a service seems to be possible, but seemingly requires a lot more specialized setup, is hackier, and more fragile in general.
 
 
-### Step 0: Requirement
-Asked Gemini-Cli to generate a `requirement.md` file based on a list of requirement (see `prompt.md`). The requirement it made makes sense and have things mostly in the correct order, but some prunning was done around testing plans just to avoid getting into too much of a rabbit hole with so many unknowns already on hand.
+### Phase 0: Requirement
+Asked Gemini-CLI to generate a `requirement.md` file based on a list of requirements (see `prompt.md`). The requirements it made make sense and have things mostly in the correct order, but some pruning was done around testing plans just to avoid getting into too much of a rabbit hole with so many unknowns already on hand.
+
+In short: Vue application via Capacitor that runs OCR and tranlsation models offline. There are three views:
+- Input view for direct text-to-text translation
+- Camera view for translating captured images
+- History view to show past translation attempts
 
 
-### Step 1: Basic app, setup and plumbing
-Phase 1 consist of setting up the views and plumbing to building APKs. Asked Gemini-CLI to create a `phase1.md` file it can work off. This went off the rails rather quickly, `npm` and `vue` related processes installed into the wrong directories and had to start over several times.
+### Phase 1: Basic app, setup and plumbing
+Phase 1 consists of setting up the views and plumbing for building APKs. Asked Gemini-CLI to create a `phase1.md` file it can work off. This went off the rails rather quickly, `npm` and `vue` related processes installed into the wrong directories and had to start over several times.
 
-Andriod Studio was a manual process, a few hiccups but mostly due to not knowing where things are located in the IDE and PATH settings. Build took a bit of time (initial package downloads) but mostly smooth, app opens and works with placeholder views.
-
-
-### Step 2: Translation model integration
-Gemini wanted to use TensorflowJS, fine, but then claims that it couldn't find appropriate pretrainned models but was going ahead anyway?? So instead prompted the Gemini to research transformerJS instead, then had to further prompt Gemini to not use an outdated version of transformerJS. Gemini could not download the model file so they had to be pulled down manually from hugginface (https://huggingface.co/Xenova/nllb-200-distilled-600M). The model has a lot more supported languages than I asked for, so the files are pretty hefty with encoder/decoder at 450mb each respectively. Gemini misconfigured offline mode for transformerJS several times, but all things considered had the page working after 5 minutes. Unsurprisingly running a big model on a webpage is a tad slow, but the plumbing works and maybe can search for a smaller model later.
+Android Studio was a manual process, a few hiccups but mostly due to not knowing where things are located in the IDE and PATH settings. Build took a bit of time (initial package downloads) but mostly smooth, app opens and works with placeholder views.
 
 
-### Intermission 1: Testing on cellphone
-Well it turned out that the model is indeed too big. Test run resulted in the application crashing with OOM in the logs
+### Phase 2: Translation model integration
+Gemini wanted to use TensorflowJS, fine, but then claims that it couldn't find appropriate pretrained models but was going ahead anyway?? So instead prompted Gemini to research transformerJS instead, then had to further prompt Gemini to not use an outdated version of transformerJS. Gemini could not download the model file so they had to be pulled down manually from Hugginface (https://huggingface.co/Xenova/nllb-200-distilled-600M). The model has a lot more supported languages than I asked for, so the files are pretty hefty with encoder/decoder at 450mb each respectively. Gemini misconfigured offline mode for transformerJS several times, but all things considered had the page working after 5 minutes. Unsurprisingly running a big model on a webpage is a tad slow, but the plumbing works and maybe can search for a smaller model later.
 
 
-#### t5-small
+### Intermission: Testing on actual device 
+It turned out that the model is indeed too big. The test run resulted in the application crashing with OOM in the logs
+
+
+#### Alternative: t5-small
 Trying out quantized t5-small instead, this works but is English centric, so English => X is okay, but X => English is flaky.
 
 See: https://huggingface.co/Xenova/t5-small
 
-#### opus-mt-de-en
-Trying out a dedicated model, this is 1/10th the size of NLLB model and is specific. Took 5-10 seconds to load on phone, but actually works afterward !!
+#### Alternative: opus-mt-de-en
+Trying out a dedicated model, this is 1/10th the size of NLLB model and is specific. Took 5-10 seconds to load on phone, but actually works once loaded. 
 
 See: https://huggingface.co/Xenova/opus-mt-de-en
 
 
+### Phase 3: Adding in historical translation entries
+Gemini mixed up deprecated packages `@capacitor/storage` and `@capacitor/preferences`, otherwise it worked pretty well out of the box, a few small manual CSS tweaks was all.
 
 
+### Phase 4: Camera and OCR integration
+Things go off the rails on this one. Gemini messed up generating TesseractJS code, probably got confused over API changes across lib-versions. Vue's template was also messed up and looks like two different pages got smashed together. Prompting Gemini to fix ended up with some outlandish suggetions - so ended up fixing things manually.
+
+and the Android build broke due to confusion over file extension in offline vs CDN modalities. It offered some outlandish wasm-packages that did not make sense. 
 
 
+### Intermission: Testing on actual device 
+The Android build broke with a cryptic message about Zipfile error. TesseractJS's handling of file extensions is a bit weird as the CDN files are gzips but the offline files are not. Gemini says to modify the build gradle files which did not resolve the issue. Further complications were insufficient app previliges to operate the camera. Resolved both eventually via Googling and through vanilla LLM chats. 
+
+
+### Phase 5: Translating camera images
+TODO
 
 
 ```
