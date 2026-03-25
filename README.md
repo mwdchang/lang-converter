@@ -1,20 +1,22 @@
 ## Lang-Converter
 An Android app for doing offline language translations.
 
-A weekend (plus an additional couple of days) inquiry into (mostly) vibe-coding of an offline language translation application. Why you ask? 
-- Avoid accidental roaming charges while out of the country, or in remote areas with no coverage.
-- Existing services with offline modes either have quirks (*cough* googlemaps *cough*) or do not work the way I wanted.
-- Just curious how far vibe-coding will go with something a bit more esoteric
+![view](translator.png)
+
+A weekend hack/vibe-coding of an offline language translator for Android platform. Why you ask?
+- Mostly, just curious how far vibe-coding will go with more esoteric requirements
+- Works exactly the way I wanted it to
+
+The peculiar requirements:
+- Minimal Java if possible
+- Can also operate as a stand-alone webapp when not packed into an APK
+- Everything works offline
 
 
 ### Ab-Initio
-Initial manual research and prodding manually: just to see what combinations of options are available as I last touched Android development years ago and a lot of things had changed. After a bit of poking around my basic requirements:
-- Minimal Java if possible
-- The models for OCR and translation should be offline
+Internet and ChatGPT seem to think this is possible. TesseractJS which I had used before handles the OCR, and suggested maybe Tensorflow.js for the translation model.
 
-Internet and ChatGPT seem to think this is possible. TesseractJS which I had used before handles the OCR, and suggested maybe transformer.js for the translation model.
-
-Alternatively, running something like a quantized LLM as a service seems to be possible, but seemingly requires a lot more specialized setup, is hackier, and more fragile in general.
+Running something like a quantized LLM as a service seems to be possible, but seemingly requires a lot more setup (aka hacks). Decided not to do this.
 
 
 ### Phase 0: Requirement
@@ -36,17 +38,17 @@ Android Studio was a manual process, a few hiccups but mostly due to not knowing
 Gemini wanted to use TensorflowJS, fine, but then claims that it couldn't find appropriate pretrained models but was going ahead anyway?? So instead prompted Gemini to research transformerJS instead, then had to further prompt Gemini to not use an outdated version of transformerJS. Gemini could not download the model file so they had to be pulled down manually from Hugginface (https://huggingface.co/Xenova/nllb-200-distilled-600M). The model has a lot more supported languages than I asked for, so the files are pretty hefty with encoder/decoder at 450mb each respectively. Gemini misconfigured offline mode for transformerJS several times, but all things considered had the page working after 5 minutes. Unsurprisingly running a big model on a webpage is a tad slow, but the plumbing works and maybe can search for a smaller model later.
 
 
-### Intermission: Testing on actual device 
-It turned out that the model is indeed too big. The test run resulted in the application crashing with OOM in the logs
+### Intermission: Testing on actual device and Goldilocks
+It turned out that the translation model is indeed too big. The test run resulted in the application crashing with OOM in the logs. Need something smaller.
 
 
-#### Alternative: t5-small
-Trying out quantized t5-small instead, this works but is English centric, so English => X is okay, but X => English is flaky.
+#### Smaller: t5-small
+Trying out quantized Google t5-small instead, this works but is English centric, so English => X is okay, but X => English is flaky.
 
 See: https://huggingface.co/Xenova/t5-small
 
-#### Alternative: opus-mt-de-en
-Trying out a dedicated model, this is 1/10th the size of NLLB model and is specific. Took 5-10 seconds to load on phone, but actually works once loaded. 
+#### Bigger again: opus-mt-de-en
+Trying out a dedicated model, this is 1/10th the size of NLLB model and is specific to DE/EN. Took 5-10 seconds to load the model into memory, but actually works okay once loaded. 
 
 See: https://huggingface.co/Xenova/opus-mt-de-en
 
@@ -56,9 +58,8 @@ Gemini mixed up deprecated packages `@capacitor/storage` and `@capacitor/prefere
 
 
 ### Phase 4: Camera and OCR integration
-Things go off the rails on this one. Gemini messed up generating TesseractJS code, probably got confused over API changes across lib-versions. Vue's template was also messed up and looks like two different pages got smashed together. Prompting Gemini to fix ended up with some outlandish suggetions - so ended up fixing things manually.
+Things go off the rails on this one. Gemini messed up generating TesseractJS code, probably got confused over API changes across lib-versions. Vue's template was also messed up and looks like two different pages got smashed together. Prompting Gemini to fix ended up with some outlandish suggetions - so ended up fixing various errors manually.
 
-and the Android build broke due to confusion over file extension in offline vs CDN modalities. It offered some outlandish wasm-packages that did not make sense. 
 
 
 ### Intermission: Testing on actual device 
@@ -66,16 +67,13 @@ The Android build broke with a cryptic message about Zipfile error. TesseractJS'
 
 
 ### Phase 5: Translating camera images
-TODO
+This phase is scheduled to do overlays for OCR, history integration, and optimization/cleanup. Given the previous phase I did not want Gemini to opmize TesseractJS code, the remaining tasks are easy, so I just did them manually.
 
 
-```
-npm run build
-npx cap sync
-npx cap open android
+### Final testing and thoughts.
+Each of the OCR and translation models take about 5-10 seconds to load. 
+- Translation seems to work pretty well
+- OCR Translation has some noises but able to translate most of the captured text
 
-/* build in studio */
+As expected, it is pretty slow. OCR-translation is not really usable interactively. Delegating requests to native models will likely be a lot faster as oppose to running in JS-engine/WASM. Gemini was pretty good up until the TesseractJS portion.
 
-adb install <path to apk> 
-
-```
