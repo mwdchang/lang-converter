@@ -9,20 +9,19 @@
     <div class="camera-content">
       <div class="camera-feed-wrapper">
         <video ref="videoElement" autoplay playsinline class="camera-feed"></video>
-        <canvas ref="canvasElement" class="hidden"></canvas> <!-- Hidden by default -->
-        <div v-if="ocrResult && ocrResult.boxes && videoWidth > 0 && videoHeight > 0" class="ocr-overlay">
+        <div v-if="ocrResult && ocrResult.data" class="ocr-overlay">
           <div
-            v-for="(box, i) in ocrResult.boxes"
+            v-for="(block, i) in ocrResult.data.blocks"
             :key="i"
             class="word-box"
             :style="{
-              left: `${(box.x0 / videoWidth) * 100}%`,
-              top: `${(box.y0 / videoHeight) * 100}%`,
-              width: `${((box.x1 - box.x0) / videoWidth) * 100}%`,
-              height: `${((box.y1 - box.y0) / videoHeight) * 100}%`,
+              left: `${(block.bbox.x0 / videoWidth) * 100}%`,
+              top: `${(block.bbox.y0 / videoHeight) * 100}%`,
+              width: `${((block.bbox.x1 - block.bbox.x0) / videoWidth) * 100}%`,
+              height: `${((block.bbox.y1 - block.bbox.y0) / videoHeight) * 100}%`,
             }"
           >
-            {{ box.text }}
+            {{ block.text }}
           </div>
         </div>
       </div>
@@ -39,10 +38,12 @@
         OCR Error: {{ ocrError }}
       </div>
 
+      <!--
       <div v-if="ocrResult && ocrResult.text" class="ocr-output-section">
         <h2>Recognized Text:</h2>
         <p>{{ ocrResult.text }}</p>
       </div>
+      -->
     </div>
   </div>
 </template>
@@ -52,9 +53,15 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { Camera } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core'; // Import Capacitor
 import { useOCR } from '@/composables/useOCR';
+import { useTranslation } from '@/composables/useTranslation';
+import { useHistory } from '@/composables/useHistory'; // Import useHistory
+import type Tesseract from 'tesseract.js';
+
+
+const { translate, isModelLoading, translationError } = useTranslation();
+const { addEntry } = useHistory(); // Get addEntry from useHistory
 
 const videoElement = ref<HTMLVideoElement | null>(null);
-const canvasElement = ref<HTMLCanvasElement | null>(null);
 const videoReady = ref(false);
 const capturing = ref(false);
 const hasCameraPermission = ref(false); // Assume false initially, will be set after checks
@@ -62,7 +69,7 @@ const videoWidth = ref(0);
 const videoHeight = ref(0);
 
 const { recognize, isOCRLoading, ocrError } = useOCR();
-const ocrResult = ref<any>(null);
+const ocrResult = ref<Tesseract.RecognizeResult | null>(null);
 
 let stream: MediaStream | null = null;
 
@@ -142,13 +149,13 @@ const stopCamera = () => {
 };
 
 const captureAndRecognize = async () => {
-  if (!videoReady.value || !videoElement.value || !canvasElement.value || isOCRLoading.value) return;
+  if (!videoReady.value || !videoElement.value || isOCRLoading.value) return;
 
   capturing.value = true;
   ocrResult.value = null; // Clear previous OCR result
 
   const video = videoElement.value;
-  const canvas = canvasElement.value;
+  const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
 
   if (context) {
@@ -159,10 +166,23 @@ const captureAndRecognize = async () => {
     try {
       // Perform OCR on the captured canvas image
       const result = await recognize(canvas);
-      // const result = await recognize(canvas.toDataURL('image/png'));
 
       if (result) {
+
+        const blocks = result.data.blocks || [];
+        for (const block of blocks) {
+          const originalText = block.text;
+
+          // Replace text with translated text
+          const newText = await translate(originalText);
+          block.text = newText as string;
+
+          // Save into entry
+          addEntry(originalText, newText);
+        }
+
         ocrResult.value = result;
+        console.log('>>', ocrResult.value);
       }
     } catch (error) {
       console.error('OCR recognition failed:', error);
@@ -208,6 +228,7 @@ h1 {
 }
 
 .camera-feed-wrapper {
+  display: block;
   position: relative;
   width: 100%;
   max-width: 600px; /* Adjust as needed */
@@ -282,10 +303,16 @@ h1 {
   margin-top: 10px;
 }
 
+.word-box {
+  border: 2px solid #CCC;
+}
+
 .ocr-overlay {
   position: absolute;
-  border: 1px solid rgba(255, 0, 0, 0.7); /* Red box for identified words */
-  background-color: rgba(255, 0, 0, 0.2); /* Semi-transparent red fill */
+  /*
+  border: 1px solid rgba(255, 0, 0, 0.7);
+  background-color: rgba(255, 0, 0, 0.2); 
+  */
   color: white; /* Make text visible over box */
   font-size: 0.8em; /* Smaller text */
   padding: 2px;
@@ -295,5 +322,13 @@ h1 {
   align-items: center;
   justify-content: center;
   text-shadow: 1px 1px 2px black; /* Make text more readable */
+
+  opacity: 0.6;
+  background: #888;
+
+  width: 100%;
+  height: 100%;
+  top: 0;
+  z-index: 5;
 }
 </style>

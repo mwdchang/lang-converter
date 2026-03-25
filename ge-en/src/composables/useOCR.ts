@@ -71,7 +71,7 @@ export function useOCR() {
       //   blocks: true
       // });
 
-      console.log('OCR Result:', ocrResult);
+      // console.log('OCR Result:', ocrResult);
       return ocrResult;
 
       // Extract bounding boxes for words
